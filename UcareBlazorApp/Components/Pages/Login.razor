@@ -1,0 +1,76 @@
+﻿@page "/login"
+@using UcareBlazorApp.Models
+@using System.Text.Json
+@using Blazored.LocalStorage
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+
+
+<style>
+
+    .mainDiv{
+        border:1.5px solid black;
+        width:700px;
+        padding:30px;
+        border-radius:20px;
+    }
+
+    .conteiner{
+        display: flex;
+        justify-content: center;
+        max-height: 100vh;
+        max-width:100wh;
+    }
+
+
+</style>
+
+<h3 class="text-center mb-4">Login</h3>
+
+<div class="conteiner">
+    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mainDiv">
+
+    <div class="form-group mb-3">
+        <label for="email" class="form-label">
+            <i class="bi bi-envelope-fill"></i> Email
+        </label>
+        <InputText id="email" class="form-control border border-primary rounded-pill" @bind-Value="loginModel.Email" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="password" class="form-label">
+            <i class="bi bi-lock-fill"></i> Password
+        </label>
+        <InputText id="password" type="password" class="form-control border border-primary rounded-pill" @bind-Value="loginModel.Password" />
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 rounded-pill">
+        <i class="bi bi-box-arrow-in-right"></i> Login
+    </button>
+    </div>
+</EditForm>
+</div>
+
+@code {
+    private LoginModel loginModel = new LoginModel();
+
+    private async Task HandleLogin()
+    {
+        var response = await Http.PostAsJsonAsync("https://api-generator.retool.com/9QvP8F/test", loginModel);
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+            var token = result.GetProperty("Token").GetString();
+            await LocalStorage.SetItemAsync("authToken", token);
+
+           
+        }
+        else
+        {
+            
+        }
+    }
+}
