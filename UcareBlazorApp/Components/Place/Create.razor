@@ -1,0 +1,52 @@
+@page "/Create"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<EditForm Model="@place" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="descriptionName" style="margin-bottom: 10px;">Input name of the place here: </label>
+        <InputText id="descriptionName" class="form-control w-25" @bind-Value="place.Name" placeholder="Enter name"
+            style="margin-bottom: 10px;" />
+
+        <label for="descriptionAddress" style="margin-bottom: 10px;">Input address of the place here: </label>
+        <InputText id="descriptionAddress" class="form-control w-25" @bind-Value="place.Address"
+            placeholder="Enter address" style="margin-bottom: 10px;" />
+
+        <label for="descriptionLongitude" style="margin-bottom: 10px;">Input longitude of the place here: </label>
+        <InputText id="descriptionLongitude" class="form-control w-25" @bind-Value="place.Longitude"
+            placeholder="Enter longitude" style="margin-bottom: 10px;" />
+
+        <label for="descriptionLatitude" style="margin-bottom: 10px;">Input latitude of the place here: </label>
+        <InputText id="descriptionLatitude" class="form-control w-25" @bind-Value="place.Latitude"
+            placeholder="Enter latitude" style="margin-bottom: 10px;" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</EditForm>
+
+@code {
+    private Place place = new Place();
+
+    private async Task HandleValidSubmit()
+    {
+        // Отправка данных на сервер
+        var response = await HttpClient.PostAsJsonAsync("api/place/create", place);
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/places");
+        }
+    }
+
+    public class Place
+    {
+        public string Name { get; set; }
+        public string Address { get; set; }
+        public string Longitude { get; set; }
+        public string Latitude { get; set; }
+    }
+}

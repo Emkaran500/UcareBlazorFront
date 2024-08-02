@@ -1,0 +1,99 @@
+@page "/Places"
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+@code {
+    private bool userIsAdmin;
+    private List<Place> places = new List<Place>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userIsAdmin = user.IsInRole("admin");
+
+       
+        places = await HttpClient.GetFromJsonAsync<List<Place>>("api/places");
+    }
+
+    private void NavigateToCreatePlace()
+    {
+        NavigationManager.NavigateTo("createplace");
+    }
+
+    private void NavigateToUpdatePlace(int id)
+    {
+        NavigationManager.NavigateTo($"updateplace/{id}");
+    }
+
+    private async Task DeletePlace(int id)
+    {
+        var response = await HttpClient.DeleteAsync($"api/places/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            places.Remove(places.First(p => p.Id == id));
+        }
+    }
+}
+
+@if (userIsAdmin)
+{
+    <div>
+        <button class="nav-link text-dark border border-info rounded shadow px-2" 
+                style="width: fit-content; padding: 0px; font-size: 20px;" 
+                @onclick="NavigateToCreatePlace">Add new Place</button>
+    </div>
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="js/map.js"></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<div class="d-flex flex-wrap" style="max-width: 1400px;">
+    @foreach (var place in places)
+    {
+        <div class="card mb-4 mr-4" style="width: 18rem;">
+            <div class="card-body">
+                <a href="@($"place/{place.Id}")" class="card-title">@place.Name</a>
+                <p class="card-text">Address: <input type="text" value="@place.Address" readonly></p>
+                <div id="map-@place.Id" style="height: 200px;"></div>
+                @if (userIsAdmin)
+                {
+                    <button class="nav-link text-dark border border-info rounded shadow px-2" 
+                            style="width: fit-content; padding: 0px; font-size: 20px;" 
+                            @onclick="() => NavigateToUpdatePlace(place.Id)">Update Place</button>
+
+                    <button class="btn btn-danger delete-btn" 
+                            @onclick="() => DeletePlace(place.Id)">Delete</button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            foreach (var place in places)
+            {
+                var latitude = Convert.ToDouble(place.Latitude);
+                var longitude = Convert.ToDouble(place.Longitude);
+
+                var jsRuntime = (IJSRuntime)HttpContext.RequestServices.GetService(typeof(IJSRuntime));
+                await jsRuntime.InvokeVoidAsync("createMap", place.Id, latitude, longitude, place.Name);
+            }
+        }
+    }
+
+    public class Place
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Address { get; set; }
+        public string Longitude { get; set; }
+        public string Latitude { get; set; }
+    }
+}
